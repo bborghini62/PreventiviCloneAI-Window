@@ -1,0 +1,17 @@
+PREVENTIVI CLONE AI - BUILD WINDOWS VIA GITHUB ACTIONS
+
+1. Apri il repository GitHub vuoto nel browser.
+2. Scegli "uploading an existing file".
+3. Trascina TUTTO IL CONTENUTO di questa cartella nella pagina GitHub.
+   Devono trovarsi alla radice del repository: package.json, src-tauri, web, scripts e .github.
+   NON caricare la cartella contenitore come sottocartella.
+4. In fondo alla pagina premi "Commit changes".
+5. Apri la scheda "Actions".
+6. Seleziona "Build Windows Setup".
+7. Se il workflow non e' gia' partito, premi "Run workflow" > "Run workflow".
+8. Attendi il segno verde.
+9. Apri l'esecuzione completata e, in fondo, scarica l'artifact:
+   Preventivi-Clone-AI-Windows-Setup
+10. Estrai lo ZIP scaricato: dentro trovi il file *-setup.exe da copiare/installare su Windows.
+
+Sul PC Windows non servono Node, Rust, Visual Studio o GitHub Desktop.

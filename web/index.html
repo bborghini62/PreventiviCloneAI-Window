@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#17324d" />
+  <title>Preventivi Clone AI — Desktop 1.0 Beta 6.2.7</title>
+  <link rel="stylesheet" href="styles.css?v=1.0.0-desktop-beta6-2-3" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar no-print">
+      <div class="brand-block">
+        <span class="eyebrow">DESKTOP 1.0 BETA 6.2.7 · IMPORTAZIONE IBRIDA VELOCE</span>
+        <h1>Preventivi Clone AI</h1>
+        <p>Importazione ibrida: lettura locale immediata, AI solo quando serve, editor completo e stampa stabile 6.2.6.</p>
+      </div>
+      <div class="top-actions">
+        <button id="importButton" class="primary">Importa PDF</button>
+        <button id="undoImportButton" class="secondary" disabled>Annulla importazione</button>
+        <button id="toggleOriginalButton" class="secondary" disabled>Affianca originale</button>
+        <button id="toggleCoverButton" class="secondary" disabled>Prima pagina originale</button>
+        <button id="printSettingsButton" class="secondary" disabled>Visualizzazione / stampa</button>
+        <button id="printButton" disabled>Stampa / PDF</button>
+        <input id="fileInput" type="file" accept="application/pdf" hidden />
+      </div>
+    </header>
+
+    <div class="utilitybar no-print">
+      <div class="utility-left">
+        <button id="saveProjectButton" class="soft" disabled>Salva progetto</button>
+        <button id="openProjectButton" class="soft">Apri progetto</button>
+        <button id="exportCsvButton" class="soft" disabled>Esporta Excel/CSV</button>
+        <button id="newProjectButton" class="ghost">Nuovo</button>
+        <input id="projectInput" type="file" accept="application/json,.json" hidden />
+      </div>
+      <div class="file-status">
+        <strong id="fileNameLabel">Nessun PDF importato</strong>
+        <span>Salvataggio automatico nel browser</span>
+      </div>
+    </div>
+
+    <section id="analysisProgressOverlay" class="analysis-progress-overlay no-print" hidden aria-live="polite" aria-busy="true">
+      <div class="analysis-progress-dialog">
+        <div class="analysis-spinner" aria-hidden="true"></div>
+        <div class="analysis-progress-copy">
+          <span class="eyebrow">MOTORE AI</span>
+          <strong id="analysisProgressTitle">Preparazione del documento…</strong>
+          <p id="analysisProgressDetail">Il programma sta preparando il PDF.</p>
+          <div class="analysis-progress-bar"><span id="analysisProgressBar"></span></div>
+          <div class="analysis-progress-footer"><small id="analysisProgressElapsed">Tempo trascorso: 0s</small><button id="cancelAnalysisButton" class="danger-outline" type="button">Interrompi importazione</button></div>
+        </div>
+      </div>
+    </section>
+
+    <main id="workspace" class="workspace">
+      <aside id="originalPanel" class="original-panel no-print" hidden>
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">ORIGINALE</span>
+            <strong>PDF di confronto</strong>
+          </div>
+          <button id="closeOriginalButton" class="icon-button" title="Chiudi originale">×</button>
+        </div>
+        <iframe id="originalFrame" title="PDF originale"></iframe>
+      </aside>
+
+      <section class="editor-panel">
+        <section id="dropZone" class="drop-zone no-print">
+          <div class="drop-icon">PDF</div>
+          <strong id="dropTitle">Trascina qui un computo o un preventivo PDF</strong>
+          <span>Il programma prova a riconoscere automaticamente la struttura, anche quando cambiano colonne e impaginazione.</span>
+        </section>
+
+        <section id="analysisCard" class="analysis-card no-print" hidden>
+          <div id="statsGrid" class="stats-grid"></div>
+          <div id="detectedColumns" class="detected-columns"></div>
+          <div id="warnings"></div>
+        </section>
+
+        <article id="documentSheet" class="document-sheet">
+          <section id="coverEditorSection" class="cover-editor-section" hidden>
+            <div class="cover-toolbar no-print">
+              <div>
+                <span id="coverModeEyebrow" class="eyebrow">COPERTINA ORIGINALE</span>
+                <strong id="coverModeTitle">Prima pagina riutilizzata e completamente editabile</strong>
+                <small id="coverModeHelp">Modifica direttamente i testi. Puoi spostare, ridimensionare, aggiungere o eliminare i campi senza perdere l’impaginazione originale.</small>
+              </div>
+              <div class="cover-actions">
+                <label class="cover-background-option"><input id="coverBackgroundToggle" type="checkbox" checked /> Sfondo originale</label>
+                <button id="addCoverFieldButton" class="soft" type="button">+ Campo</button>
+                <button id="resetCoverButton" class="soft" type="button">Ripristina</button>
+                <button id="disableCoverButton" class="ghost" type="button">Non usare</button>
+              </div>
+            </div>
+            <div id="coverPage" class="cover-page">
+              <img id="coverBackgroundImage" class="cover-background-image" alt="Prima pagina originale" />
+              <div id="coverFields" class="cover-fields"></div>
+            </div>
+          </section>
+          <div class="document-topline">
+            <label class="issuer-header-field">
+              <span>Intestazione di chi effettua il preventivo</span>
+              <textarea id="mittente" class="sender-field" rows="3" placeholder="Ragione sociale / Studio / Impresa&#10;Indirizzo · P. IVA / C.F.&#10;Telefono · e-mail"></textarea>
+            </label>
+            <label class="document-date-field">
+              <span>Data documento</span>
+              <input id="dataDocumento" class="date-field" placeholder="Data documento" />
+            </label>
+          </div>
+
+          <textarea id="titolo" class="document-title" rows="2" placeholder="Titolo del lavoro / preventivo"></textarea>
+
+          <div class="document-meta">
+            <label>
+              <span>Intestazione / Cliente</span>
+              <input id="cliente" />
+            </label>
+            <label>
+              <span>Ubicazione / Indirizzo</span>
+              <input id="indirizzo" />
+            </label>
+          </div>
+
+          <div class="sheet-toolbar no-print">
+            <div class="sheet-actions">
+              <button id="addItemButton" class="soft">+ Voce</button>
+              <button id="addSectionButton" class="soft">+ Sezione</button>
+            </div>
+            <input id="searchField" class="search-field" placeholder="Cerca nel documento…" />
+            <div class="view-tool">
+              <label for="screenFontSizeQuick">Carattere video</label>
+              <select id="screenFontSizeQuick" title="Grandezza del carattere visualizzato nel foglio">
+                <option value="9">9 px</option>
+                <option value="10">10 px</option>
+                <option value="11">11 px</option>
+                <option value="12">12 px</option>
+                <option value="13">13 px</option>
+                <option value="14">14 px</option>
+                <option value="15">15 px</option>
+                <option value="16">16 px</option>
+              </select>
+            </div>
+            <div class="view-tool description-view-tool">
+              <label for="screenDescriptionQuick">Descrizione video</label>
+              <select id="screenDescriptionQuick" title="Mostra la descrizione completa oppure limita le righe visibili a video">
+                <option value="full">Completa</option>
+                <option value="1">1 riga</option>
+                <option value="2">2 righe</option>
+                <option value="3">3 righe</option>
+                <option value="4">4 righe</option>
+                <option value="5">5 righe</option>
+                <option value="6">6 righe</option>
+                <option value="7">7 righe</option>
+                <option value="8">8 righe</option>
+                <option value="10">10 righe</option>
+                <option value="12">12 righe</option>
+              </select>
+            </div>
+            <div class="discount-tool">
+              <label>Sconto generale %</label>
+              <input id="globalDiscount" type="number" min="0" max="100" step="0.01" value="0" />
+              <button id="applyDiscountButton" class="soft">Applica</button>
+            </div>
+          </div>
+
+          <div class="sheet-table-wrap">
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th class="col-code">N./Cod.</th>
+                  <th class="col-description">Designazione / Descrizione</th>
+                  <th class="col-unit">U.M.</th>
+                  <th class="col-quantity">Quantità</th>
+                  <th class="col-price">Prezzo unitario</th>
+                  <th class="col-discount">Sconto %</th>
+                  <th class="col-net">Prezzo netto</th>
+                  <th class="col-total">Totale</th>
+                  <th class="col-controls no-print">Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="rowsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="document-footer">
+            <div class="notes-box">
+              <label>Note</label>
+              <textarea id="notes" rows="5" placeholder="Condizioni, esclusioni, tempi di consegna…"></textarea>
+            </div>
+            <div class="totals-box">
+              <div><span>Totale lordo</span><strong id="grossSubtotal">€ 0,00</strong></div>
+              <div><span>Sconti</span><strong id="discountTotal">- € 0,00</strong></div>
+              <div class="subtotal-line"><span>Totale esclusa IVA</span><strong id="subtotal">€ 0,00</strong></div>
+              <div class="vat-line">
+                <span>IVA</span>
+                <input id="vatPct" class="vat-input no-print" type="number" min="0" step="0.01" value="10" />
+                <span id="vatPrint" class="print-only">10%</span>
+                <strong id="vatTotal">€ 0,00</strong>
+              </div>
+              <div class="grand-total-line"><span>TOTALE COMPLESSIVO</span><strong id="grandTotal">€ 0,00</strong></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="firstPageModeModal" class="modal-backdrop no-print" hidden>
+    <section class="first-page-mode-panel" role="dialog" aria-modal="true" aria-labelledby="firstPageModeTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">GESTIONE DELLA PRIMA PAGINA</span>
+          <h2 id="firstPageModeTitle">Come deve essere trattata la prima pagina?</h2>
+          <p id="firstPageFileName"></p>
+          <p id="firstPageModeHint" class="first-page-mode-hint">Controllo rapido della prima pagina…</p>
+        </div>
+      </div>
+      <div class="import-speed-options">
+        <span class="eyebrow">MODALITÀ DI IMPORTAZIONE</span>
+        <label><input type="radio" name="importMode" value="hybrid" checked><span><strong>Veloce ibrida — consigliata</strong><small>Legge subito testo e coordinate sul computer. Usa l’AI soltanto per correggere i documenti incerti.</small></span></label>
+        <label><input type="radio" name="importMode" value="accurate"><span><strong>Accurata AI completa</strong><small>Invia tutto il PDF all’analisi visiva. Più lenta, utile per scansioni e impaginazioni molto irregolari.</small></span></label>
+        <label><input type="radio" name="importMode" value="local"><span><strong>Solo locale — immediata</strong><small>Nessun costo API. Ideale per PDF digitali chiari; le righe dubbie restano da controllare.</small></span></label>
+      </div>
+      <div class="first-page-mode-options">
+        <label><input type="radio" name="firstPageMode" value="auto" checked><span><strong>Riconoscimento automatico</strong><small>Il motore decide se è una copertina oppure contiene voci del preventivo.</small></span></label>
+        <label><input type="radio" name="firstPageMode" value="cover"><span><strong>Copertina editabile</strong><small>La prima pagina viene conservata e non viene interpretata come elenco prezzi.</small></span></label>
+        <label><input type="radio" name="firstPageMode" value="specification"><span><strong>Pagina del capitolato editabile</strong><small>Resta come prima pagina del documento, separata dalle voci economiche.</small></span></label>
+        <label><input type="radio" name="firstPageMode" value="ignore"><span><strong>Ignora prima pagina</strong><small>L’analisi parte dalla seconda pagina e la prima non viene inserita nel progetto.</small></span></label>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelFirstPageModeButton" class="ghost" type="button">Annulla</button>
+        <button id="confirmFirstPageModeButton" class="primary" type="button">Avvia importazione</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="importReviewModal" class="modal-backdrop no-print" hidden>
+    <section class="import-review-panel" role="dialog" aria-modal="true" aria-labelledby="importReviewTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">CONTROLLO PRIMA DELL’IMPORTAZIONE</span>
+          <h2 id="importReviewTitle">Verifica del documento riconosciuto</h2>
+          <p id="importReviewSummary">Controlla i campi gialli o rossi prima di creare il clone editabile.</p>
+        </div>
+        <button id="closeImportReviewButton" class="icon-button" type="button" title="Annulla">×</button>
+      </div>
+      <div id="importReviewWarnings" class="review-warnings"></div>
+      <div class="review-header-grid">
+        <label><span>Titolo / Oggetto</span><textarea id="reviewTitle" rows="2"></textarea></label>
+        <label><span>Cliente / Intestazione</span><input id="reviewClient" /></label>
+        <label><span>Ubicazione / Indirizzo</span><input id="reviewAddress" /></label>
+        <label><span>Data</span><input id="reviewDate" /></label>
+      </div>
+      <div class="review-table-wrap">
+        <table class="review-table">
+          <thead><tr><th>Tipo</th><th>N./Codice</th><th>Descrizione</th><th>U.M.</th><th>Quantità</th><th>Prezzo</th><th>Totale fonte</th><th>Affidabilità</th><th></th></tr></thead>
+          <tbody id="reviewRowsBody"></tbody>
+        </table>
+      </div>
+      <div class="review-actions">
+        <button id="cancelImportReviewButton" class="ghost" type="button">Annulla importazione</button>
+        <button id="confirmImportReviewButton" class="primary" type="button">Conferma e crea il clone</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="printSettingsModal" class="modal-backdrop no-print" hidden>
+    <section class="print-settings-panel" role="dialog" aria-modal="true" aria-labelledby="printSettingsTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">VISUALIZZAZIONE / STAMPA / ESPORTAZIONE PDF</span>
+          <h2 id="printSettingsTitle">Impostazioni visualizzazione e stampa</h2>
+        </div>
+        <button id="closePrintSettingsButton" class="icon-button" type="button" title="Chiudi">×</button>
+      </div>
+
+      <div class="print-settings-content">
+        <div class="print-settings-form">
+          <label class="setting-field screen-setting-field">
+            <span>Grandezza carattere a video</span>
+            <select id="screenFontSize">
+              <option value="9">9 px</option>
+              <option value="10">10 px</option>
+              <option value="11">11 px</option>
+              <option value="12">12 px</option>
+              <option value="13">13 px</option>
+              <option value="14">14 px</option>
+              <option value="15">15 px</option>
+              <option value="16">16 px</option>
+            </select>
+          </label>
+
+          <label class="setting-field screen-description-setting-field">
+            <span>Descrizione visibile a video</span>
+            <select id="screenDescriptionDisplay">
+              <option value="full">Descrizione completa</option>
+              <option value="1">Massimo 1 riga</option>
+              <option value="2">Massimo 2 righe</option>
+              <option value="3">Massimo 3 righe</option>
+              <option value="4">Massimo 4 righe</option>
+              <option value="5">Massimo 5 righe</option>
+              <option value="6">Massimo 6 righe</option>
+              <option value="7">Massimo 7 righe</option>
+              <option value="8">Massimo 8 righe</option>
+              <option value="10">Massimo 10 righe</option>
+              <option value="12">Massimo 12 righe</option>
+            </select>
+          </label>
+
+          <label class="setting-field print-font-setting-field">
+            <span>Grandezza carattere in stampa</span>
+            <select id="printFontSize">
+              <option value="6">6 pt</option>
+              <option value="7">7 pt</option>
+              <option value="8">8 pt</option>
+              <option value="9">9 pt</option>
+              <option value="10">10 pt</option>
+              <option value="11">11 pt</option>
+              <option value="12">12 pt</option>
+            </select>
+          </label>
+
+          <label class="setting-field">
+            <span>Orientamento</span>
+            <select id="printOrientation">
+              <option value="landscape">Orizzontale</option>
+              <option value="portrait">Verticale</option>
+            </select>
+          </label>
+
+          <label class="setting-field">
+            <span>Formato pagina</span>
+            <select id="printPageSize">
+              <option value="A4">A4</option>
+              <option value="A3">A3</option>
+            </select>
+          </label>
+
+          <label class="setting-field">
+            <span>Descrizione in stampa</span>
+            <select id="printDescriptionMode">
+              <option value="full">Descrizione completa</option>
+              <option value="limited">Limita il numero di righe</option>
+            </select>
+          </label>
+
+          <label id="printDescriptionLinesField" class="setting-field">
+            <span>Numero massimo di righe</span>
+            <select id="printDescriptionLines">
+              <option value="1">1 riga</option>
+              <option value="2">2 righe</option>
+              <option value="3">3 righe</option>
+              <option value="4">4 righe</option>
+              <option value="5">5 righe</option>
+              <option value="6">6 righe</option>
+              <option value="7">7 righe</option>
+              <option value="8">8 righe</option>
+              <option value="10">10 righe</option>
+              <option value="12">12 righe</option>
+            </select>
+          </label>
+
+          <div class="setting-checks">
+            <label><input id="printFitToPage" type="checkbox" /> Adatta automaticamente alla pagina</label>
+            <label><input id="printShowDiscount" type="checkbox" /> Mostra colonna sconto</label>
+            <label><input id="printShowNet" type="checkbox" /> Mostra prezzo netto</label>
+            <label><input id="printShowDetails" type="checkbox" /> Stampa sottorighe di calcolo</label>
+            <label><input id="printShowNotes" type="checkbox" /> Stampa note</label>
+            <label><input id="printShowFullHeader" type="checkbox" /> Stampa intestazione completa</label>
+          </div>
+
+          <p class="print-hint">Le impostazioni vengono salvate nel browser. Puoi stampare la descrizione completa oppure limitarla a un numero definito di righe. Il carattere e il numero di righe visibili a video si aggiornano subito; le altre opzioni vengono usate nella stampa e nel PDF. Nel dialogo del browser verifica che orientamento e formato coincidano con quelli scelti.</p>
+        </div>
+
+        <div class="print-preview-card">
+          <span class="preview-label">ANTEPRIMA IMPOSTAZIONE</span>
+          <div id="printPreviewPage" class="print-preview-page landscape a4">
+            <div class="preview-header"></div>
+            <div id="printPreviewText" class="preview-text">Descrizione articolo · Quantità · Prezzo · Totale</div>
+            <div class="preview-lines"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <strong id="printSettingsSummary">A4 · Orizzontale · 7 pt</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="resetPrintSettingsButton" class="ghost" type="button">Ripristina predefiniti</button>
+        <div>
+          <button id="cancelPrintSettingsButton" class="soft" type="button">Chiudi</button>
+          <button id="printNowButton" class="primary" type="button">Stampa ora</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="app.js?v=1.0.0-desktop-beta6-2-5-print-layout"></script>
+</body>
+</html>
