@@ -27,7 +27,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Windows Setup
+      - name: Prepare PDF.js and verify application
+        run: npm run verify
+
+      - name: Build Windows installer
         run: npm run tauri build -- --bundles nsis
 
       - name: Upload Windows installer
