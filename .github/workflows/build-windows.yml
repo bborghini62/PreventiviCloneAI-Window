@@ -27,8 +27,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Prepare PDF.js and verify application
-        run: npm run verify
+      - name: Prepare PDF.js
+        run: npm run prepare:pdfjs
+
+      - name: Verify JavaScript syntax
+        run: npm run verify:syntax
+
+      - name: Verify application buttons
+        run: npm run verify:buttons
 
       - name: Build Windows installer
         run: npm run tauri build -- --bundles nsis
