@@ -1,0 +1,24 @@
+{
+  "name": "preventivi-clone-ai-desktop",
+  "private": true,
+  "version": "1.0.0-beta.6.2.9",
+  "scripts": {
+    "prepare:pdfjs": "node scripts/copy-pdfjs.mjs",
+    "verify:syntax": "node --check web/app.js",
+    "verify:buttons": "node scripts/verify-buttons.mjs",
+    "verify": "npm run prepare:pdfjs && npm run verify:syntax && npm run verify:buttons && npm run verify:calc && npm run verify:cursor && npm run verify:print && npm run verify:hybrid",
+    "tauri": "tauri",
+    "dev": "npm run verify && tauri dev",
+    "build": "npm run verify && tauri build",
+    "verify:print": "node scripts/verify-print-regression.mjs",
+    "verify:hybrid": "node scripts/verify-hybrid.mjs",
+    "verify:calc": "node scripts/verify-calculation.mjs",
+    "verify:cursor": "node scripts/verify-cursor-stability.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "4.10.38"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

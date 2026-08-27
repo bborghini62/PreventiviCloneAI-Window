@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permessi della finestra principale di Preventivi Clone AI Desktop",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:webview:allow-print",
+    "dialog:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://round-violet-13ba.bruno-c77.workers.dev/**"
+        }
+      ]
+    }
+  ]
+}
