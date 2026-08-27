@@ -1,4 +1,4 @@
-name: Build Windows Setup
+name: Build Windows Setup Beta 6.2.9
 
 on:
   workflow_dispatch:
@@ -9,6 +9,10 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: PreventiviCloneAI_GitHub_Windows_Beta_6_2_9_CURSOR_STABLE
 
     steps:
       - name: Checkout repository
@@ -36,12 +40,18 @@ jobs:
       - name: Verify application buttons
         run: npm run verify:buttons
 
+      - name: Verify calculations
+        run: npm run verify:calc
+
+      - name: Verify cursor stability
+        run: npm run verify:cursor
+
       - name: Build Windows installer
         run: npm run tauri build -- --bundles nsis
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: PreventiviCloneAI-Windows-Setup
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          name: PreventiviCloneAI-Windows-Setup-Beta-6.2.9
+          path: PreventiviCloneAI_GitHub_Windows_Beta_6_2_9_CURSOR_STABLE/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
