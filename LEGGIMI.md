@@ -18,3 +18,4 @@ Tasto destro su `BUILD_MAC.command` → Apri. La nuova app si trova in `src-taur
 2. Compilare e sostituire l’app desktop.
 
 La stampa e il relativo audit sono quelli della base stabile 6.2.6.
+premi Commit changes
